@@ -9,4 +9,4 @@ coverage
 .vscode
 *.suo
 .env*
-/generated/prisma
+/src/generated
