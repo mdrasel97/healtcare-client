@@ -34,7 +34,8 @@ if (!data.user) {
     throw new Error("Failed to register user")
 }
 
-const patient = await prisma.$transaction(async (tx) => {
+try{
+    const patient = await prisma.$transaction(async (tx) => {
 
     const patientTx = await tx.patient.create({
         data: {
@@ -46,11 +47,18 @@ const patient = await prisma.$transaction(async (tx) => {
     return patientTx
 })
 
-return {
+return { 
     ...data,
     patient
 }
-
+}catch(error){
+    console.log("transaction error", error)
+    await prisma.user.delete({
+        where:{
+            id: data.user.id
+        }
+    })
+}
 }
 
 
