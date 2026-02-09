@@ -29,11 +29,12 @@ const userExists = await prisma.user.findUnique({
     }
 })
 
-if(!userExists){
+if (userExists) {
     throw new Error(`user with this email already exists`)
 }
 
-const userData = await auth.api.signInEmail({
+
+const userData = await auth.api.signUpEmail({
     body: {
         email: payload.doctor.email,
         password: payload.password,

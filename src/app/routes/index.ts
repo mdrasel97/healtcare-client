@@ -8,6 +8,6 @@ const router = Router()
 
 router.use("/auth", authRoutes)
 router.use("/specialties", SpecialtyRoute)
-router.use("/doctors", userRoutes)
+router.use("/users", userRoutes)
 
 export const IndexRoutes = router
