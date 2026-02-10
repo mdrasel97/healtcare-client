@@ -10,4 +10,5 @@ export interface TErrorResponse {
   errorSource?: IErrorSource[]
   error?: any
   statusCode?: number
+  stack?: string
 }

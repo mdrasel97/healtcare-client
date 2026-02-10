@@ -36,23 +36,28 @@ if(envVers.NODE_ENV === "development"){
 const errorSource: IErrorSource[] = []
 let statusCode : number = status.INTERNAL_SERVER_ERROR
 let message : string = "Internal Server error"
+let stack : string | undefined = undefined
 
 if(err instanceof z.ZodError){
  const simpleFidError = handleZodError(err)
       statusCode = simpleFidError.statusCode as number
       message= simpleFidError.message
       errorSource.push(...simpleFidError.errorSource!)
+      stack=err.stack
 }else if(err instanceof Error){
   statusCode = status.INTERNAL_SERVER_ERROR
   message= err.message
-  
+  stack = err.stack
+
 }
 
 const errorResponse : TErrorResponse = {
   success: false,
   message: message,
   errorSource,
-  error: envVers.NODE_ENV === "development" ?err: undefined
+  
+  stack: envVers.NODE_ENV === "development" ? stack : undefined,
+  error: envVers.NODE_ENV === "development" ? err : undefined
 }
 
 
