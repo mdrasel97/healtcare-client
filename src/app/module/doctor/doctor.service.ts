@@ -16,12 +16,12 @@ return doctors
 }
 
 
-const getDoctorById = async(id: string)=>{
+// const getDoctorById = async(id: string)=>{
 
-}
+// }
 
 export const doctorService = {
-    getAllDoctors,
-    getDoctorById,
-    
+    getAllDoctors, 
+    // getDoctorById,
+
 }
