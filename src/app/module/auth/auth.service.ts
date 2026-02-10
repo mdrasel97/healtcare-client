@@ -1,5 +1,7 @@
 
+import status from "http-status";
 import { UserStatus } from "../../../generated/prisma/enums";
+import { AppError } from "../../errorHelpers/AppError";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 
@@ -31,7 +33,7 @@ const data = await auth.api.signUpEmail({
 })
 
 if (!data.user) {
-    throw new Error("Failed to register user")
+    throw new AppError(status.BAD_REQUEST, "Failed to register patient")
 }
 
 try{
@@ -72,7 +74,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
     })
 
     if (data.user.status === UserStatus.BLOCKED) {
-        throw new Error("Your account has been blocked. Please contact support.")
+        throw new AppError(status.BAD_REQUEST, "Your account has been blocked. Please contact support.")
     }
 
     if(data.user.status === UserStatus.DELETED) {
