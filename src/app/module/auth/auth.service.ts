@@ -4,6 +4,7 @@ import { UserStatus } from "../../../generated/prisma/enums";
 import { AppError } from "../../errorHelpers/AppError";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import { tokenUtils } from "../../utilis/token";
 
 
 interface ILoginUserPayload {
@@ -81,7 +82,33 @@ const loginUser = async (payload: ILoginUserPayload) => {
         throw new Error("Your account has been deleted.")
     }
 
-    return data.user
+
+      const accessToken = tokenUtils.getAccessToken({
+            userId: data.user.id,
+            role: data.user.role,
+            name: data.user.name,
+            email: data.user.email,
+            status: data.user.status,
+            isDeleted: data.user.isDeleted,
+            emailVerified: data.user.emailVerified,
+        });
+
+         const refreshToken = tokenUtils.getRefreshToken({
+            userId: data.user.id,
+            role: data.user.role,
+            name: data.user.name,
+            email: data.user.email,
+            status: data.user.status,
+            isDeleted: data.user.isDeleted,
+            emailVerified: data.user.emailVerified,
+        });
+
+        return {
+            ...data,
+            accessToken,
+            refreshToken,
+            // patient
+        }
 }
 
 
