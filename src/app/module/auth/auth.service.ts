@@ -19,71 +19,41 @@ interface IRegisterPatientPayload {
     password: string;
 }
 
-const registerPatient = async (payload : IRegisterPatientPayload) => {
-const {name, email, password} = payload
+const registerPatient = async (payload: IRegisterPatientPayload) => {
+    const { name, email, password } = payload;
 
-const data = await auth.api.signUpEmail({
-    body: {
-        name,
-        email,
-        password,
-        // needPasswordChange: false,
-        // role: Role.PATIENT
-
-    }
-})
-
-if (!data.user) {
-    throw new AppError(status.BAD_REQUEST, "Failed to register patient")
-}
-
-try{
-    const patient = await prisma.$transaction(async (tx) => {
-
-    const patientTx = await tx.patient.create({
-        data: {
-            userId: data.user.id,
-            name: payload.name,
-            email: payload.email,
-        }    
-    })
-    return patientTx
-})
-
-return { 
-    ...data,
-    patient
-}
-}catch(error){
-    console.log("transaction error", error)
-    await prisma.user.delete({
-        where:{
-            id: data.user.id
-        }
-    })
-}
-}
-
-
-const loginUser = async (payload: ILoginUserPayload) => {
-    const {email, password} = payload
-    const data = await auth.api.signInEmail({
+    const data = await auth.api.signUpEmail({
         body: {
+            name,
             email,
             password,
+            //default values
+            // needsPasswordChange: false,
+            // role: Role.PATIENT
         }
     })
 
-    if (data.user.status === UserStatus.BLOCKED) {
-        throw new AppError(status.BAD_REQUEST, "Your account has been blocked. Please contact support.")
+    if (!data.user) {
+        // throw new Error("Failed to register patient");
+        throw new AppError(status.BAD_REQUEST, "Failed to register patient");
     }
 
-    if(data.user.status === UserStatus.DELETED) {
-        throw new Error("Your account has been deleted.")
-    }
+    //TODO : Create Patient Profile In Transaction After Sign Up Of Patient In USer Model
+    try {
+        const patient = await prisma.$transaction(async (tx) => {
 
+            const patientTx = await tx.patient.create({
+                data: {
+                    userId: data.user.id,
+                    name: payload.name,
+                    email: payload.email,
+                }
+            })
 
-      const accessToken = tokenUtils.getAccessToken({
+            return patientTx
+        })
+
+        const accessToken = tokenUtils.getAccessToken({
             userId: data.user.id,
             role: data.user.role,
             name: data.user.name,
@@ -93,7 +63,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
             emailVerified: data.user.emailVerified,
         });
 
-         const refreshToken = tokenUtils.getRefreshToken({
+        const refreshToken = tokenUtils.getRefreshToken({
             userId: data.user.id,
             role: data.user.role,
             name: data.user.name,
@@ -107,10 +77,67 @@ const loginUser = async (payload: ILoginUserPayload) => {
             ...data,
             accessToken,
             refreshToken,
-            // patient
+            patient
         }
+
+    } catch (error) {
+        console.log("Transaction error : ", error);
+        await prisma.user.delete({
+            where: {
+                id: data.user.id
+            }
+        })
+        throw error;
+    }
+
 }
 
+
+const loginUser = async (payload: ILoginUserPayload) => {
+    const { email, password } = payload;
+
+    const data = await auth.api.signInEmail({
+        body: {
+            email,
+            password,
+        }
+    })
+
+    if (data.user.status === UserStatus.BLOCKED) {
+        throw new AppError(status.FORBIDDEN, "User is blocked");
+    }
+
+    if (data.user.isDeleted || data.user.status === UserStatus.DELETED) {
+        throw new AppError(status.NOT_FOUND, "User is deleted");
+    }
+
+    const accessToken = tokenUtils.getAccessToken({
+        userId: data.user.id,
+        role: data.user.role,
+        name: data.user.name,
+        email: data.user.email,
+        status: data.user.status,
+        isDeleted: data.user.isDeleted,
+        emailVerified: data.user.emailVerified,
+    });
+
+    const refreshToken = tokenUtils.getRefreshToken({
+        userId: data.user.id,
+        role: data.user.role,
+        name: data.user.name,
+        email: data.user.email,
+        status: data.user.status,
+        isDeleted: data.user.isDeleted,
+        emailVerified: data.user.emailVerified,
+    });
+
+    return {
+        ...data,
+        accessToken,
+        refreshToken,
+    };
+
+}
 
 export const authService = {
     registerPatient,
